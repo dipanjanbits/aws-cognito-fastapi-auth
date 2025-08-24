@@ -1,3 +1,5 @@
 fastapi/.venv
 streamlit/.venv
 fastapi/.env
+streamlit/.env
+__pycache__/

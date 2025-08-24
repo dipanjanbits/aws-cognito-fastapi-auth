@@ -297,37 +297,37 @@ async def call_lambda(
             detail=f"Failed to invoke Lambda function: {str(e)}"
         )
 
-@app.get("/admin/lambda")
-async def admin_lambda_call(
-    name: str = "Admin",
-    current_user: dict = Depends(require_roles(["admin", "superuser"]))
-):
-    """Admin-only Lambda function call"""
-    try:
-        event = {
-            "queryStringParameters": {"name": name, "admin": "true"},
-            "requestContext": {
-                "authorizer": {
-                    "claims": current_user
-                }
-            }
-        }
+# @app.get("/admin/lambda")
+# async def admin_lambda_call(
+#     name: str = "Admin",
+#     current_user: dict = Depends(require_roles(["admin", "superuser"]))
+# ):
+#     """Admin-only Lambda function call"""
+#     try:
+#         event = {
+#             "queryStringParameters": {"name": name, "admin": "true"},
+#             "requestContext": {
+#                 "authorizer": {
+#                     "claims": current_user
+#                 }
+#             }
+#         }
         
-        response = await invoke_lambda_async(config.LAMBDA_FUNCTION_NAME, event)
-        body = json.loads(response["body"]) if "body" in response else response
+#         response = await invoke_lambda_async(config.LAMBDA_FUNCTION_NAME, event)
+#         body = json.loads(response["body"]) if "body" in response else response
         
-        return {
-            "lambda_result": body, 
-            "admin_user": current_user.get("email", "unknown"),
-            "roles": current_user.get("cognito:groups", [])
-        }
+#         return {
+#             "lambda_result": body, 
+#             "admin_user": current_user.get("email", "unknown"),
+#             "roles": current_user.get("cognito:groups", [])
+#         }
         
-    except Exception as e:
-        logger.error(f"Admin Lambda invocation error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to invoke Lambda function: {str(e)}"
-        )
+#     except Exception as e:
+#         logger.error(f"Admin Lambda invocation error: {e}")
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Failed to invoke Lambda function: {str(e)}"
+#         )
         
 # @app.get("/s3/buckets")
 # async def list_s3_buckets(current_user: dict = Depends(get_current_user)):

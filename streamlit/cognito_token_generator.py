@@ -9,6 +9,11 @@ from botocore.exceptions import ClientError, NoCredentialsError
 import pyperclip
 import hmac
 import hashlib
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Set page config
 st.set_page_config(
@@ -133,7 +138,13 @@ def calculate_secret_hash(username, client_id, client_secret):
 def authenticate_cognito(user_pool_id, client_id, username, password, client_secret=None, region='us-east-1'):
     """Authenticate with AWS Cognito and get JWT tokens"""
     try:
-        client = boto3.client('cognito-idp', region_name=region)
+        # Create a new session with the current credentials
+        session = boto3.Session(
+            aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+            region_name=region
+        )
+        client = session.client('cognito-idp')
         
         # Prepare auth parameters
         auth_parameters = {
@@ -353,10 +364,36 @@ def main():
         
         st.markdown("---")
         st.markdown("### 🔧 AWS Credentials")
-        st.info("Make sure AWS CLI is configured or environment variables are set:\n\n"
-                "• AWS_ACCESS_KEY_ID\n"
-                "• AWS_SECRET_ACCESS_KEY\n"
-                "• AWS_DEFAULT_REGION")
+        
+        # AWS Credentials Section
+        use_env_vars = st.checkbox("Use Environment Variables", 
+                                 value=bool(os.getenv('AWS_ACCESS_KEY_ID')),
+                                 help="If checked, will use credentials from environment variables")
+        
+        if use_env_vars:
+            aws_access_key = os.getenv('AWS_ACCESS_KEY_ID', '')
+            aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY', '')
+            if aws_access_key and aws_secret_key:
+                st.success("✅ AWS credentials loaded from environment variables")
+            else:
+                st.warning("⚠️ AWS credentials not found in environment variables")
+                st.info("Create a .env file in the streamlit directory with:\n\n"
+                       "AWS_ACCESS_KEY_ID=your_access_key\n"
+                       "AWS_SECRET_ACCESS_KEY=your_secret_key\n"
+                       "AWS_DEFAULT_REGION=your_region")
+        else:
+            aws_access_key = st.text_input("AWS Access Key ID", 
+                                         type="password",
+                                         value=os.getenv('AWS_ACCESS_KEY_ID', ''))
+            aws_secret_key = st.text_input("AWS Secret Access Key", 
+                                         type="password",
+                                         value=os.getenv('AWS_SECRET_ACCESS_KEY', ''))
+            
+            if aws_access_key and aws_secret_key:
+                # Set the environment variables
+                os.environ['AWS_ACCESS_KEY_ID'] = aws_access_key
+                os.environ['AWS_SECRET_ACCESS_KEY'] = aws_secret_key
+                os.environ['AWS_DEFAULT_REGION'] = region
     
     # Main content
     col1, col2 = st.columns([1, 1])
@@ -520,7 +557,7 @@ def main():
                     ("/aws_health?name=TestUser", "Lambda function call"),
                     ("/user/profile", "User profile"),
                     # ("/s3/buckets", "S3 buckets list"),
-                    ("/admin/lambda?name=AdminUser", "Admin Lambda call")
+                    # ("/admin/lambda?name=AdminUser", "Admin Lambda call")
                 ]
             
             for endpoint, description in endpoints:
