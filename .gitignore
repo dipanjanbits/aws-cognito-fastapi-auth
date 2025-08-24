@@ -1,0 +1,3 @@
+fastapi/.venv
+streamlit/.venv
+fastapi/.env
